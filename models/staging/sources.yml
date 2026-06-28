@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: raw
+    database: project-3ab1bdb7-97b6-4d9c-af7
+    schema: raw
+    tables:
+      - name: people
+      - name: teams
+      - name: batting
+      - name: pitching
+      - name: fielding
+      - name: salaries
+      - name: series_post

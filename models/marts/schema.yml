@@ -1,0 +1,150 @@
+version: 2
+
+models:
+  - name: dim_players
+    description: "One row per player ever. Primary biographical and career reference table."
+    columns:
+      - name: player_id
+        description: "Unique player identifier. Primary key."
+        tests:
+          - not_null
+          - unique
+      - name: last_name
+        tests:
+          - not_null
+      - name: primary_position
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                ["P", "C", "1B", "2B", "3B", "SS", "OF", "Unknown", "PH", "PR"]
+
+  - name: dim_teams
+    description: "One row per team per season. Team reference table."
+    columns:
+      - name: team_id
+        tests:
+          - not_null
+      - name: year_id
+        tests:
+          - not_null
+      - name: team_name
+        tests:
+          - not_null
+      - name: team_era
+        tests:
+          - accepted_values:
+              values: ["Modern", "Contemporary", "Expansion", "Historical"]
+
+  - name: fct_team_performance
+    description: >
+      One row per team per season from 1985 onward. Core fact table for Q1
+      performance driver analysis. Contains win percentage, ERA, run differential,
+      postseason flags, and team profile classifications.
+    columns:
+      - name: team_id
+        tests:
+          - not_null
+      - name: year_id
+        tests:
+          - not_null
+      - name: win_pct
+        description: "Wins divided by total games played. Range 0.000 to 1.000."
+        tests:
+          - not_null
+      - name: era
+        description: "Team earned run average for the season."
+        tests:
+          - not_null
+      - name: made_postseason
+        tests:
+          - not_null
+      - name: team_profile
+        tests:
+          - accepted_values:
+              values:
+                [
+                  "Elite Pitching + Elite Offense",
+                  "Elite Pitching + Average Offense",
+                  "Average Pitching + Elite Offense",
+                  "Average Pitching + Average Offense",
+                ]
+      - name: win_tier
+        tests:
+          - accepted_values:
+              values:
+                [
+                  "Elite (90+ wins pace)",
+                  "Contender (85+ wins pace)",
+                  "Fringe (75+ wins pace)",
+                  "Rebuilding (under 75 wins pace)",
+                ]
+
+  - name: fct_player_value
+    description: >
+      One row per player per season. Combines batters and pitchers into a single
+      fact table using player_type flag. Batting rows contain OPS metrics,
+      pitching rows contain ERA metrics. Null values in opposing metric columns
+      are expected and by design.
+    columns:
+      - name: player_id
+        tests:
+          - not_null
+      - name: year_id
+        tests:
+          - not_null
+      - name: player_type
+        description: "Whether the row represents a batter or pitcher season."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Batter", "Pitcher"]
+      - name: ops
+        description: >
+          On-base Plus Slugging. Batter value proxy used in absence of official WAR.
+          Calculated as OBP + SLG. Only populated for Batter rows.
+          Limitation: does not account for baserunning, fielding, or position adjustment.
+          Suitable for relative comparison within same era.
+      - name: pitching_efficiency_proxy
+        description: >
+          Pitcher value proxy calculated as (K/9 / BB/9) * (1 / ERA).
+          Higher values indicate better pitcher efficiency.
+          Only populated for Pitcher rows. Limitation: does not account for
+          fielding independent factors or ballpark effects.
+
+  - name: fct_payroll_efficiency
+    description: >
+      One row per player per season where salary data exists (1985-2016).
+      Core fact table for Q2 payroll efficiency analysis. Contains salary,
+      performance metrics, and efficiency scores for both batters and pitchers.
+    columns:
+      - name: player_id
+        tests:
+          - not_null
+      - name: year_id
+        tests:
+          - not_null
+      - name: salary
+        description: "Player salary in dollars for that season."
+        tests:
+          - not_null
+      - name: player_type
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Batter", "Pitcher"]
+      - name: efficiency_score
+        description: >
+          Unified efficiency metric. For batters: OPS per $1M salary (higher = better).
+          For pitchers: inverse of ERA per $1M salary (higher = better).
+          Enables cross-player comparison for payroll allocation decisions.
+      - name: salary_tier
+        tests:
+          - accepted_values:
+              values:
+                [
+                  "Max Contract (10M+)",
+                  "High Salary (5-10M)",
+                  "Mid Salary (1-5M)",
+                  "League Minimum (under 1M)",
+                ]

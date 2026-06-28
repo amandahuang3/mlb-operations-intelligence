@@ -1,0 +1,100 @@
+version: 2
+
+models:
+  - name: stg_people
+    description: "Cleaned and renamed player biographical data. One row per player."
+    columns:
+      - name: player_id
+        description: "Unique player identifier. Primary key."
+        tests:
+          - not_null
+          - unique
+      - name: first_name
+        description: "Player first name."
+      - name: last_name
+        description: "Player last name."
+      - name: birth_country
+        description: "Country of birth. Used for international scouting ROI analysis."
+      - name: mlb_debut_date
+        description: "Date of first MLB appearance."
+      - name: final_game_date
+        description: "Date of last MLB appearance."
+
+  - name: stg_teams
+    description: "Cleaned and renamed team season data. One row per team per season."
+    columns:
+      - name: team_id
+        tests:
+          - not_null
+      - name: year_id
+        tests:
+          - not_null
+      - name: wins
+        tests:
+          - not_null
+      - name: era
+        description: "Team earned run average for the season."
+      - name: runs_scored
+        description: "Total runs scored by the team during the season."
+
+  - name: stg_batting
+    description: "Cleaned batting stats. One row per player per team per season per stint. Players traded mid-season have multiple rows."
+    columns:
+      - name: player_id
+        tests:
+          - not_null
+      - name: year_id
+        tests:
+          - not_null
+      - name: stint
+        description: "Stint number. Players traded mid-season get a new stint row per team."
+        tests:
+          - not_null
+
+  - name: stg_pitching
+    description: "Cleaned pitching stats. One row per player per team per season per stint."
+    columns:
+      - name: player_id
+        tests:
+          - not_null
+      - name: year_id
+        tests:
+          - not_null
+
+  - name: stg_fielding
+    description: "Cleaned fielding stats. One row per player per position per season."
+    columns:
+      - name: player_id
+        tests:
+          - not_null
+      - name: year_id
+        tests:
+          - not_null
+      - name: position
+        tests:
+          - not_null
+
+  - name: stg_salaries
+    description: "Cleaned salary data. One row per player per team per season. Coverage 1985-2016."
+    columns:
+      - name: player_id
+        tests:
+          - not_null
+      - name: year_id
+        tests:
+          - not_null
+      - name: salary
+        description: "Annual salary in dollars."
+        tests:
+          - not_null
+
+  - name: stg_series_post
+    description: "Cleaned postseason series results. One row per series per year."
+    columns:
+      - name: year_id
+        tests:
+          - not_null
+      - name: series_round
+        description: "Postseason round. Values include WS (World Series), CS (Championship Series), DS (Division Series), WC (Wild Card)."
+        tests:
+          - not_null
